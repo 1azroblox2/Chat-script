@@ -1,0 +1,84 @@
+--[[ 
+	Custom Roblox Chat Script
+	Author: 1azroblox2
+	Description: Özel GUI chat sistemi. Tüm oyuncular mesajları görebilir.
+]]
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- RemoteEvent oluştur
+local chatEvent = Instance.new("RemoteEvent")
+chatEvent.Name = "CustomChatEvent"
+chatEvent.Parent = ReplicatedStorage
+
+-- Server tarafı: Mesajları tüm oyunculara gönder
+chatEvent.OnServerEvent:Connect(function(player, message)
+	if message and message ~= "" then
+		chatEvent:FireAllClients(player.Name .. ": " .. message)
+	end
+end)
+
+-- Client tarafı için fonksiyon
+local function setupChatGUI(player)
+	local playerGui = player:WaitForChild("PlayerGui")
+	
+	-- Basit GUI
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "CustomChatGUI"
+	screenGui.Parent = playerGui
+	
+	local chatFrame = Instance.new("ScrollingFrame")
+	chatFrame.Name = "ChatFrame"
+	chatFrame.Size = UDim2.new(0.3, 0, 0.4, 0)
+	chatFrame.Position = UDim2.new(0, 10, 0.6, 0)
+	chatFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	chatFrame.BackgroundTransparency = 0.3
+	chatFrame.ScrollBarThickness = 6
+	chatFrame.Parent = screenGui
+	
+	local textBox = Instance.new("TextBox")
+	textBox.Name = "TextBox"
+	textBox.PlaceholderText = "Mesajını yaz..."
+	textBox.Size = UDim2.new(0.8, 0, 0, 30)
+	textBox.Position = UDim2.new(0, 10, 1, -40)
+	textBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	textBox.TextColor3 = Color3.fromRGB(255,255,255)
+	textBox.ClearTextOnFocus = false
+	textBox.Parent = screenGui
+	
+	local sendButton = Instance.new("TextButton")
+	sendButton.Name = "SendButton"
+	sendButton.Text = "Gönder"
+	sendButton.Size = UDim2.new(0.18, 0, 0, 30)
+	sendButton.Position = UDim2.new(0.82, 0, 1, -40)
+	sendButton.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	sendButton.TextColor3 = Color3.fromRGB(255,255,255)
+	sendButton.Parent = screenGui
+	
+	-- Mesaj gönderme
+	sendButton.MouseButton1Click:Connect(function()
+		local msg = textBox.Text
+		if msg ~= "" then
+			chatEvent:FireServer(msg)
+			textBox.Text = ""
+		end
+	end)
+	
+	-- Mesajları göster
+	chatEvent.OnClientEvent:Connect(function(message)
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, 0, 0, 20)
+		label.Text = message
+		label.TextColor3 = Color3.fromRGB(255,255,255)
+		label.BackgroundTransparency = 1
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = chatFrame
+		
+		chatFrame.CanvasPosition = Vector2.new(0, chatFrame.AbsoluteCanvasSize.Y)
+	end)
+end
+
+-- Yeni oyuncular için GUI oluştur
+Players.PlayerAdded:Connect(setupChatGUI)
